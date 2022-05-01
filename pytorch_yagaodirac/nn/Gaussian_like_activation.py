@@ -1,7 +1,8 @@
 import torch
 
 class Gaussian_like_activation(torch.nn.Module):
-    '''This is a simplified version of '''
+    '''This is a simplified version of Gaussian.
+    The formula might be wrong..'''
     def __init__(self, size, * , w = 1., l_like = 1., sigma_like = 2., epi = 0.0001):
         super(Gaussian_like_activation, self).__init__()
         self.w          = torch.nn.Parameter(torch.full((size, ), w         , dtype = torch.float32), True)

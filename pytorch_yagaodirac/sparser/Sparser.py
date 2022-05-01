@@ -1,5 +1,11 @@
 import torch
 
+'''
+to do:
+Since different layers don't share the same parameters, this tool probably needs to fit the layers, 
+especially the mostly used, built in.
+'''
+
 class Sparser:
     '''
     This tool helps take max use of torch.nn.Linear. It works both with bias or w/o bias.
@@ -74,20 +80,22 @@ class Sparser:
 
     pass#class
 
-sps = Sparser()
 
+#test
 if 0:
+    sps = Sparser()
+    
     l1 = torch.nn.Linear(2,3,bias=False)
     l1.weight = torch.nn.Parameter(torch.tensor([[1., 1.],[1., 1.],[2., 2.]]))
     sps.apply((l1))
+
+    l2 = torch.nn.Linear(1,3,bias=True)
+    l2.weight = torch.nn.Parameter(torch.tensor([[1., 1.],[1., 1.],[2., 2.]]))
+    l2.bias = torch.nn.Parameter(torch.tensor([[1.],[1.],[2.]]))
+    sps.apply((l2))
+
+    l3 = torch.nn.Linear(2,3,bias=False)
+    l3.weight = torch.nn.Parameter(torch.tensor([[1.],[1.],[2.]]))
+    sps.apply((l3))
     pass
-
-l2 = torch.nn.Linear(1,3,bias=True)
-l2.weight = torch.nn.Parameter(torch.tensor([[1., 1.],[1., 1.],[2., 2.]]))
-l2.bias = torch.nn.Parameter(torch.tensor([[1.],[1.],[2.]]))
-sps.apply((l2))
-
-l3 = torch.nn.Linear(2,3,bias=False)
-l3.weight = torch.nn.Parameter(torch.tensor([[1.],[1.],[2.]]))
-sps.apply((l3))
 
