@@ -9,11 +9,14 @@ especially the mostly used, built in.
 class Sparser:
     '''
     This tool helps take max use of torch.nn.Linear. It works both with bias or w/o bias.
+    Also I recommend you use this with dropout.
+    Dropout force as many neutrons to be significant which always push some vectors to the same point. Then sparse them.
     The mechanism is like, if any 2 or more points of the weight( or with the bias) are too close, one of them
     is moved to a random place.
     How:
     sps = Sparser() # or Sparser(rel_dist = 0.001)
     layer = torch.nn.Linear(...)
+    #also, in the forward function in the model, do something like: x = torch.dropout(layer)
     for epoch in range(total_epochs):
         #some training code.
         if epoch%1000 == 1000-1:
@@ -21,12 +24,6 @@ class Sparser:
             pass
     I personally recommend you call this tool every 10 ~ 1000 epochs, but the frequency is not tested.
     '''
-    #@staticmethod
-    #def get_recommend_rel_distance(dim0):
-    #    '''This function helps decide the hyperparameter of relative distance'''
-    #    return 0.05/dim0
-    #    pass
-
     def __init__(self, rel_dist = 0.01):
         self.rel_dist = rel_dist
         pass

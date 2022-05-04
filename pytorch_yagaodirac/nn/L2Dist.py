@@ -7,8 +7,9 @@ class L2Dist(torch.nn.Module):
     It gives out non negative results.
     The activation function after it better gives out non zero if given something near zero. But gives out 0 if given super big numbers.
     '''
-    def __init__(self, in_dim, out_dim):
+    def __init__(self, in_dim, out_dim,* , name = None):
         super(L2Dist, self).__init__()
+        self.name = name
         self.points = torch.nn.Parameter(torch.rand(out_dim, in_dim))
         pass
     def forward(self, x):
@@ -26,6 +27,9 @@ class L2Dist(torch.nn.Module):
         x = x.view(x.shape[0],-1)
         return x
         pass
+
+    def __str__(self):
+        return F'{self.name} L2 distance layer. Points: {self.points}'
     pass#class
 
 
