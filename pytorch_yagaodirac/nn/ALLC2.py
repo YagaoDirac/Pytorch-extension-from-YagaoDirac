@@ -118,7 +118,7 @@ if 0:
     out2.mean().backward()
 
     pass
-if 1:
+if 0:
     class testModel(torch.nn.Module):
         def __init__(self):
             super(testModel, self).__init__()

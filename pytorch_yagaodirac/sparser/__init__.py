@@ -1,1 +1,1 @@
-from .Sparser import Sparser as Sparser
+from .Sparser_torch_nn_Linear import Sparser_torch_nn_Linear as Sparser_torch_nn_Linear
