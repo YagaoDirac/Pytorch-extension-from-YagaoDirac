@@ -44,11 +44,11 @@ class Sparser_torch_nn_Linear:
                 pass
 
             mean = combined.mean(dim=0, keepdim=True)
-            _centrilized = combined - mean
-            std = _centrilized.std(dim=0, unbiased=False, keepdim=True)  # unbiased = False is very important here!!!
+            _centralized = combined - mean
+            std = _centralized.std(dim=0, unbiased=False, keepdim=True)  # unbiased = False is very important here!!!
             std_too_small = std<self.epi
             std = (std-std*std_too_small)+std_too_small*self.epi
-            _normalized = _centrilized / std
+            _normalized = _centralized / std
             #length = _normalized.shape[0]
             seg_lists = _normalized.split([1 for i in range(length)])
             seg_lists = list(seg_lists)
