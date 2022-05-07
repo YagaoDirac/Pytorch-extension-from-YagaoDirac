@@ -1,2 +1,2 @@
-from . import GBN_functional as GBN_functional
+from .GBN_functional import GBN_functional as GBN_functional
 

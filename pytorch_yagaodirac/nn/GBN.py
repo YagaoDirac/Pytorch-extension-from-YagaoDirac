@@ -1,6 +1,6 @@
 import torch
 
-from functional.GBN_functional import GBN_functional as GBN_functional
+from .functional.GBN_functional import GBN_functional as GBN_functional
 
 #class GBN_functional(torch.autograd.Function):
 #    @staticmethod
