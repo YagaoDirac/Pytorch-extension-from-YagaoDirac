@@ -53,14 +53,16 @@ class Sparser_torch_nn_Linear:
             seg_lists = _normalized.split([1 for i in range(length)])
             seg_lists = list(seg_lists)
 
-            dist = self.rel_dist/torch.pow(torch.tensor([length],dtype = torch.float32), torch.tensor([1/combined.shape[1]],dtype = torch.float32))#可能不对。
-            dist = dist.item()
+            rel_dist = self.rel_dist/torch.pow(torch.tensor([length],dtype = torch.float32), torch.tensor([1/combined.shape[1]],dtype = torch.float32))#可能不对。
+            rel_dist = rel_dist.item()
+            rel_dist_sqr = rel_dist * rel_dist
+            abs_dist_sqr = self.abs_dist * self.abs_dist
             count = 0
             for i1 in range(length-1):
                 for i2 in range(i1+1, length):
                     _dif = combined[i1] - combined[i2]
                     _dis = (_dif * _dif).mean()
-                    if _dis.item() < self.abs_dist:
+                    if _dis.item() < abs_dist_sqr:
                         seg_lists[i2] = torch.rand_like(seg_lists[i2]) * (self.abs_dist * 10/std)
                         # mean + 10 * abs_distance.
                         # Also, I assumed this is not near any other points.
@@ -71,7 +73,7 @@ class Sparser_torch_nn_Linear:
 
                     _dif = seg_lists[i1] - seg_lists[i2]
                     _dis = (_dif*_dif).mean()
-                    if _dis.item()<dist:
+                    if _dis.item()<rel_dist_sqr:
                         seg_lists[i2] = torch.rand_like(seg_lists[i2])*2
                         # mean + 2std. This is already nearly 95%, I don't remember.
                         #Also, I assumed this is not near any other points.
