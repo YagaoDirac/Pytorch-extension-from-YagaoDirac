@@ -4,17 +4,16 @@ from functional.GBN_functional import GBN_functional as GBN_functional
 
 #class GBN_functional(torch.autograd.Function):
 #    @staticmethod
-#    def forward(ctx, x, training, epi_as_tensor = torch.tensor([1e-5])):
-#        ctx.save_for_backward(torch.tensor([training], dtype= torch.bool), epi_as_tensor)
+#    def forward(ctx, x, scale, epi_as_tensor = torch.tensor([1e-5])):
+#        scale_as_tensor = torch.tensor([scale],dtype = torch.float32)
+#        ctx.save_for_backward(scale_as_tensor, epi_as_tensor)
 #        return x
 #        pass
 #    @staticmethod
 #    def backward(ctx, g):
-#        training, epi_as_tensor = ctx.saved_tensors
+#        scale_as_tensor, epi_as_tensor = ctx.saved_tensors
+#        scale = scale_as_tensor.item()
 #        epi = epi_as_tensor.item()
-#        if not training:
-#            return g, None
-#            pass
 #
 #        mean = g.mean(dim=0, keepdim=True)
 #        _centralized = g - mean
@@ -22,7 +21,12 @@ from functional.GBN_functional import GBN_functional as GBN_functional
 #        std_too_small = std < epi
 #        std = (std - std * std_too_small) + std_too_small * epi
 #        _normalized = _centralized / std
-#        return _normalized, None
+#        if scale != 1.:
+#            return _normalized*scale, None
+#            pass
+#        else:
+#            return _normalized, None
+#            pass
 #        pass
 #    pass#class
 
@@ -40,22 +44,20 @@ class GBN(torch.nn.Module):
         self.scale = scale
         pass
     def forward(self, x):
-        x = GBN_functional.apply(x, self.training)
-        if self.scale != 1.:
-            return x*self.scale
-        else:
-            return x
+        x = GBN_functional.apply(x, self.scale)
+        return x
         pass#def forward
     pass#class
 
 
 
 if 0:
-    layer1 = GBN()
+    layer1 = GBN(scale= 10)
     in1 = torch.tensor([1,2,3], dtype = torch.float32, requires_grad= True)
     in1_2 = torch.tensor([1,2,3], dtype = torch.float32)
     out1 = layer1(in1)*in1_2
     out1.mean().backward()
+    #Then, in1.grad is prepared. It's 12.2. If the scale is 1 by default, the grad is 1.22.
 
     layer2 = GBN().cuda()
     in2 = torch.tensor([1, 2, 3], dtype=torch.float32, requires_grad=True).cuda()
