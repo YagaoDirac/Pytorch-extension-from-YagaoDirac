@@ -31,7 +31,7 @@ from .functional.GBN_functional import GBN_functional as GBN_functional
 #    pass#class
 
 class GBN(torch.nn.Module):
-    def __init__(self, *, scale = 1.):
+    def __init__(self, *, scale = 0.01):
         '''Since BN messes up with the forward propagation, Now we have Gradient Batch Normalization.
         Notice, to replace x = relu(self.Linear_0(BN(x))),
         I recommend x = relu(GBN(self.Linear_0(x))).

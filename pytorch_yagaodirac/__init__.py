@@ -7,9 +7,13 @@
 ##test_var = util.Counter()
 #
 from .Counter import Counter as Counter
+from .utils import Gaussian as Gaussian
+#from .plain_mean import plain_mean as plain_mean
 from . import datagen
 from . import nn
 from . import optim
 from . import sparser
+from . import ordered_param
+from . import linear_layer_tool
 
 

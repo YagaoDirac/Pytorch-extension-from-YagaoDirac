@@ -17,6 +17,9 @@ Loss:  0.00420359056442976
 
 
 
+from termcolor import colored
+#print(colored('hello', 'red'), colored('world', 'green'))
+#print(colored("hello red world", 'red'))
 
 import numpy as np
 import numpy.random
@@ -38,45 +41,41 @@ class Model(torch.nn.Module):
     def __init__(self, output_dims=3):
         super().__init__()
         # model . Model part must be in front of the optim part, since the init of optimizer relies on the registered layers.
-        units = 2
+        units = 1
         self.Lin0 = torch.nn.Linear(2, units)
+        # self.Lin0.weight = torch.nn.Parameter(torch.tensor([[5, 0]]*units,dtype = torch.float32))
+        # self.Lin0.bias = torch.nn.Parameter(torch.tensor([0]*units,dtype = torch.float32))
+
         # self.Lin1 = torch.nn.Linear(units, units)
-        self.Gaussian0 = yd.nn.Gaussian_simple(units)
+        self.Gaussian0 = yd.nn.Gaussian_simple(units, True, init_shrink_factor=1)
+
         # self.Gaussian1 = yd.nn.Gaussian_simple(units)
-
-        # self.SelMul0 = yd.nn.SelMul(2, units, True)
-        # self.SelMul1 = yd.nn.SelMul(units, units, True)
-        # self.L2D0 = yd.nn.L2Dist(units, units)
-        # self.L2D1 = yd.nn.L2Dist(units, units)
-
-        # self.ALLC2_0 = yd.nn.ALLC2(units, shrink_factor = 100.)
-        # self.ALLC2_1 = yd.nn.ALLC2(units, shrink_factor = 100.)
 
         ################Don't modify anything under this line unless you know what you are doing.
         self.Output = torch.nn.Linear(units, output_dims)
+        self.Output.weight = torch.nn.Parameter(torch.zeros((output_dims, units), dtype=torch.float32))
+        self.Output.bias = torch.nn.Parameter(torch.zeros(output_dims, dtype=torch.float32))
+
         self.loss_fn = torch.nn.MSELoss()
         self.opt = torch.optim.RMSprop(self.parameters(),
                                        lr=1e-2)  # I personally prefer RMSprop, but the original proj used Adam. Probably doesn't affect too much.
-        self.sdl = yd.optim.AutoScheduler(self.opt, distance=100)
+        self.sdl = yd.optim.AutoScheduler(self.opt, distance=10)
         self.printing = False
-        self.sparser = yd.sparser.Sparser_torch_nn_Linear()
+
+        # self.sparser = yd.sparser.Sparser_torch_nn_Linear(abs_dist=0.002, rel_dist=1)
+        self.dropout = torch.nn.Dropout(p=0.2)
+        self.gbn = yd.nn.GBN(scale=1)
         pass
 
     def forward(self, x):
+        x = self.dropout(x)
         # x = self.ALLC2_0(self.L2D0(self.SelMul0(x)))
-        x = self.Gaussian0(self.Lin0(x))
-        debug_string = "hidden layer 1:"
-        if self.printing:
-            if len(list(x.shape)) == 1:
-                print(F"{debug_string}{x}")
-                pass
-            else:
-                print(F"{debug_string}{x}")
-                pass
-            pass
+        x = self.Lin0(x)
+        x = self.gbn(x)
+        x = self.Gaussian0(x)
+        x = self.gbn(x)
 
-        # x = self.Gaussian1(self.Lin1(x))
-        # debug_string = "hidden layer 2:"
+        # debug_string = "hidden layer 1:"
         # if self.printing:
         #    if len(list(x.shape)) == 1:
         #        print(F"{debug_string}{x}")
@@ -101,10 +100,10 @@ save_format = 'jpg'
 save_format = 'png'
 
 batch_size = 1024  # 1024
-##########################################
-epochs = 500
-save_counter = yd.Counter(10)
-##########################################
+########################################################################################################################################################################
+epochs = 20
+save_counter = yd.Counter(epochs / 5)
+########################################################################################################################################################################
 if 0:
     epochs = 4
     batch_size = 16  # 1024
@@ -125,32 +124,41 @@ while data_gen.epoch < epochs:
 
     if save_counter.get(data_gen.epoch):
         with torch.no_grad():
+            print(colored(F"-----------------   {data_gen.epoch}   ------------------", 'yellow'))
+            print(colored(F"Lin0-------------------------", 'red'))
+            print(model.Lin0.weight.data.clone().detach().cpu().numpy())
+            print(model.Lin0.bias.data.clone().detach().cpu().numpy())
+            print(colored(F"Gaussian-------------------------", 'red'))
+            print(model.Gaussian0.one_over_c.data.clone().detach().cpu().numpy())
+            if None != model.Gaussian0.bias:
+                print(model.Gaussian0.bias.data.clone().detach().cpu().numpy())
+                pass
+            print(colored(F"Output-------------------------", 'red'))
+            print(model.Output.weight.data.clone().detach().cpu().numpy())
+            print(model.Output.bias.data.clone().detach().cpu().numpy())
             model.printing = True
-            print(F"-----------------   {data_gen.epoch}   ------------------")
-            model(torch.tensor([-2, 0], dtype=torch.float32, device=device))
-            model(torch.tensor([-1, 0], dtype=torch.float32, device=device))
-            model(torch.tensor([-0.5, 0], dtype=torch.float32, device=device))
-            model(torch.tensor([0, 0], dtype=torch.float32, device=device))
-            model(torch.tensor([0, -1], dtype=torch.float32, device=device))
-            print(model.Output)
+            # model(torch.tensor([-1, 0], dtype=torch.float32, device=device))
+            # model(torch.tensor([0, 0], dtype=torch.float32, device=device))
+            # model(torch.tensor([0, -1], dtype=torch.float32, device=device))
             model.printing = False
             pass
         model.sdl.step(loss.item())
-        temp = model.sparser.apply(model.Lin0)
-        if temp:
-            print("sparsed something")
-            pass
+        temp = 0
+        # temp = model.sparser.apply(model.Lin0)
+        # print(F"sparsed: {temp} -----------")
+
         print(F"Loss:  {loss.item()}")
         model.eval()
         with torch.no_grad():
             # coords_ = data_gen.get_pure_coord(256)
 
             # channel_last = model(coords_['data'])
-            channel_last = torch.empty(0, 3)
+            channel_last = torch.empty(0, 3).cuda()
             is_last = False
             while not is_last:
                 coords_ = data_gen.get_pure_coord(256)
                 channel_last = torch.cat((channel_last, model(coords_['data'])))
+                # raise(Exception("STOP!!!!!!!!"))
                 is_last = coords_['is_last']
                 # print(F"channel_last length   {channel_last.shape}")
                 pass  # while 1
@@ -167,5 +175,8 @@ while data_gen.epoch < epochs:
             pass  # with
         pass  # if
     pass  # while
+
+
+
 
 

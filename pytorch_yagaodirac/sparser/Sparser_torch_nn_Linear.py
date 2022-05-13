@@ -8,6 +8,9 @@ especially the mostly used, built in.
 
 class Sparser_torch_nn_Linear:
     '''
+    !!! If this tool works well enough, I would make a series of this and the interface would be like iterator-algorithm pattern.
+    If your code would break at this point, check out the test code in the end of these files.
+
     This tool helps take max use of torch.nn.Linear. It works both with bias or w/o bias.
     Also I recommend you use this with dropout.
     Dropout force as many neutrons to be significant which always push some vectors to the same point. Then sparse them.
@@ -32,8 +35,11 @@ class Sparser_torch_nn_Linear:
 
     def apply(self, LinearLayer):
         length = LinearLayer.weight.shape[0]
+
+        #iter part
         if length < 2:
-            raise(Exception("This sparser works only with at least 2 dim for the output of a nn.Linear."))
+            return 0
+            #raise(Exception("This sparser works only with at least 2 dim for the output of a nn.Linear."))
             pass
         with torch.no_grad():
             if LinearLayer.bias == None:
@@ -43,6 +49,7 @@ class Sparser_torch_nn_Linear:
                 combined = torch.cat((LinearLayer.weight, LinearLayer.bias.view(-1, 1)), dim=1)
                 pass
 
+            #algo part.
             mean = combined.mean(dim=0, keepdim=True)
             _centralized = combined - mean
             std = _centralized.std(dim=0, unbiased=False, keepdim=True)  # unbiased = False is very important here!!!
