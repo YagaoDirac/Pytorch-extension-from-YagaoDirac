@@ -41,39 +41,78 @@ class Model(torch.nn.Module):
     def __init__(self, output_dims=3):
         super().__init__()
         # model . Model part must be in front of the optim part, since the init of optimizer relies on the registered layers.
-        units = 1
-        self.Lin0 = torch.nn.Linear(2, units)
-        # self.Lin0.weight = torch.nn.Parameter(torch.tensor([[5, 0]]*units,dtype = torch.float32))
-        # self.Lin0.bias = torch.nn.Parameter(torch.tensor([0]*units,dtype = torch.float32))
+        in_dim = 4
+        out_put = 3
+        width = 16
+        units = [in_dim]
 
-        # self.Lin1 = torch.nn.Linear(units, units)
-        self.Gaussian0 = yd.nn.Gaussian_simple(units, True, init_shrink_factor=1)
+        init_lr = 1e-2
+        factor = 1  # this is test only. Set to 1.
+        scale = 1  # this is test only. Set to 1.
 
-        # self.Gaussian1 = yd.nn.Gaussian_simple(units)
+        i = 0
+        units.append(width)
+        self.Lin0 = torch.nn.Linear(units[i], units[i + 1])
+        self.gbn0 = yd.nn.GBN(scale=scale, lr=init_lr)
+        self.Lin0.weight = torch.nn.Parameter(self.Lin0.weight / units[i] * factor)
+        self.Indicator0 = yd.Linear_indicator(self.Lin0)
+        # self.Lin0.weight = torch.nn.Parameter(torch.tensor([[1, 0.8]]*units[i+1], dtype = torch.float32))
+        # self.Lin0.bias = torch.nn.Parameter(torch.full((units[i+1],), 0.666* factor, dtype = torch.float32), requires_grad = True)
+
+        i = 1
+        units.append(width)
+        self.Lin1 = torch.nn.Linear(units[i], units[i + 1])
+        self.gbn1 = yd.nn.GBN(scale=scale, lr=init_lr)
+        self.Lin1.weight = torch.nn.Parameter(self.Lin1.weight / units[i] * factor)
+        self.Indicator1 = yd.Linear_indicator(self.Lin1)
+        # self.Lin1.weight = torch.nn.Parameter(torch.full((units[i+1], units[i]), 0.444/units[i], dtype = torch.float32), requires_grad = True)
+        # self.Lin1.bias = torch.nn.Parameter(torch.full((units[i+1],), 0.444* factor, dtype = torch.float32), requires_grad = True)
+
+        # i = 2
+        # units.append(width)
+        # self.Lin2 = torch.nn.Linear(units[i], units[i+1])
+        # i = 3
+        # units.append(width)
+        # self.Lin3 = torch.nn.Linear(units[i], units[i+1])
 
         ################Don't modify anything under this line unless you know what you are doing.
-        self.Output = torch.nn.Linear(units, output_dims)
-        self.Output.weight = torch.nn.Parameter(torch.zeros((output_dims, units), dtype=torch.float32))
-        self.Output.bias = torch.nn.Parameter(torch.zeros(output_dims, dtype=torch.float32))
+        units.append(out_put)
+        self.Output = torch.nn.Linear(units[-2], units[-1])
+        self.gbnOut = yd.nn.GBN(scale=1e-3, lr=init_lr)  # Don't know why it doesn't work at all.
+        # self.Output.weight = torch.nn.Parameter(torch.full((units[-1], units[-2]), 0.123/units[-2]* factor, dtype = torch.float32), requires_grad = True)
+        self.Output.weight = torch.nn.Parameter(self.Output.weight / units[-2] * factor)
+        # self.Output.bias = torch.nn.Parameter(torch.full((units[-1], ), 0.35* factor, dtype = torch.float32), requires_grad = True)
+        # self.Output.bias = torch.nn.Parameter(torch.full((units[-1], ), 0.35* factor, dtype = torch.float32), requires_grad = True)
 
         self.loss_fn = torch.nn.MSELoss()
         self.opt = torch.optim.RMSprop(self.parameters(),
-                                       lr=1e-2)  # I personally prefer RMSprop, but the original proj used Adam. Probably doesn't affect too much.
+                                       lr=init_lr)  # I personally prefer RMSprop, but the original proj used Adam. Probably doesn't affect too much.
         self.sdl = yd.optim.AutoScheduler(self.opt, distance=10)
         self.printing = False
 
-        # self.sparser = yd.sparser.Sparser_torch_nn_Linear(abs_dist=0.002, rel_dist=1)
-        self.dropout = torch.nn.Dropout(p=0.2)
-        self.gbn = yd.nn.GBN(scale=1)
+        self.sparser = yd.sparser.Sparser_torch_nn_Linear(abs_dist=0.02, rel_dist=0.1)
+        self.dropout_small = torch.nn.Dropout(p=0.2)
+        self.dropout_big = torch.nn.Dropout(p=0.4)
         pass
 
     def forward(self, x):
-        x = self.dropout(x)
-        # x = self.ALLC2_0(self.L2D0(self.SelMul0(x)))
+        h1 = x + 2.
+        h2 = x - 2.
+        x = torch.cat((h1, h2), dim=-1)
+
+        # x = self.dropout_small(x)
+
         x = self.Lin0(x)
-        x = self.gbn(x)
-        x = self.Gaussian0(x)
-        x = self.gbn(x)
+        x = self.gbn0(x)  ###########
+        x = yd.Gaussian(x)
+        # x = torch.sin(x)
+        # x = torch.relu(x)
+        # x = self.dropout_big(x)
+
+        x = self.Lin1(x)
+        x = self.gbn1(x)
+        x = yd.Gaussian(x)
+        # x = self.dropout_big(x)
 
         # debug_string = "hidden layer 1:"
         # if self.printing:
@@ -84,25 +123,52 @@ class Model(torch.nn.Module):
         #        print(F"{debug_string}{x}")
         #        pass
         #    pass
-        return self.Output(x)
+        x = self.Output(x)
+        x = self.gbnOut(x)
+        return x
         pass  # def forward
+
+    def on_batch_begin(self):
+        self.opt.zero_grad()
+        pass
+
+    def on_batch_end(self):
+        self.opt.step()
+        pass
+
+    def on_epoch_begin(self):
+        pass
+
+    def on_epoch_end(self):
+        pass
+
+    def on_checkpoint_begin(self):
+        pass
+
+    def on_checkpoint_end(self):
+        pass
 
     pass  # class
 
 
 model = Model().float().cuda()
 
-# data_gen = NoPEDateGen('dataset/', 'dot second version.png')
-# data_gen = NoPEDateGen('dataset/', 'dot 3.0.png')
-# data_gen = yd.datagen.nerf2d_datagen_no_pe('dataset/', 'glasses.jpg')
-data_gen = yd.datagen.nerf2d_datagen_no_pe('dataset/', 'dot 3.0.png').cuda()
+# data_gen = NoPEDateGen('dataset/', 'dot second version.png').cuda()
+# data_gen = NoPEDateGen('dataset/', 'dot 3.0.png').cuda()
+# data_gen = yd.datagen.nerf2d_datagen_no_pe('dataset/', 'glasses.jpg').cuda()
+data_gen = yd.datagen.nerf2d_datagen_no_pe('dataset/', 'compound dot.png').cuda()
 save_format = 'jpg'
 save_format = 'png'
 
 batch_size = 1024  # 1024
 ########################################################################################################################################################################
+save_every = 1
+total_save = 5
+epochs = save_every * total_save
+save_counter = yd.Counter(save_every)
+
 epochs = 20
-save_counter = yd.Counter(epochs / 5)
+save_counter = yd.Counter_log(min_step_length=10)
 ########################################################################################################################################################################
 if 0:
     epochs = 4
@@ -114,39 +180,56 @@ while data_gen.epoch < epochs:
     model.train()
     model.printing = False
     X, Y = data_gen.get_data(batch_size)  # X is coord(x,y), Y is color(R,G,B)
-    model.opt.zero_grad()
+    model.on_batch_begin()  # model.opt.zero_grad()
     pred = model(X)
     loss = model.loss_fn(pred, Y)
     loss.backward()
-    model.opt.step()
+    model.on_batch_end()  # model.opt.step()
 
     # break
-
+    # print(data_gen.epoch)
     if save_counter.get(data_gen.epoch):
         with torch.no_grad():
-            print(colored(F"-----------------   {data_gen.epoch}   ------------------", 'yellow'))
-            print(colored(F"Lin0-------------------------", 'red'))
-            print(model.Lin0.weight.data.clone().detach().cpu().numpy())
-            print(model.Lin0.bias.data.clone().detach().cpu().numpy())
-            print(colored(F"Gaussian-------------------------", 'red'))
-            print(model.Gaussian0.one_over_c.data.clone().detach().cpu().numpy())
-            if None != model.Gaussian0.bias:
-                print(model.Gaussian0.bias.data.clone().detach().cpu().numpy())
+            _r = model.Indicator0.update()
+            if _r.valid:
+                print(F"Lin0 converge score: {_r.score}")
                 pass
-            print(colored(F"Output-------------------------", 'red'))
-            print(model.Output.weight.data.clone().detach().cpu().numpy())
-            print(model.Output.bias.data.clone().detach().cpu().numpy())
-            model.printing = True
+            #_r = model.Indicator1.update()
+            #if _r.valid:
+            #    print(F"Lin1 converge score: {_r.score}")
+            #    pass
+            # print(colored(F"-----------------   {data_gen.epoch}   ------------------", 'green'))
+            # print(colored(F"Lin0[0][:4]-------------------------", 'yellow'))
+            # print(model.Lin0.weight.data.clone().detach().cpu().numpy()[0][:4])
+            # print(model.Lin0.bias.data.clone().detach().cpu().numpy()[0])
+            # print(colored(F"Lin1[0][:4]-------------------------", 'yellow'))
+            # print(model.Lin1.weight.data.clone().detach().cpu().numpy()[0][:4])
+            # print(model.Lin1.bias.data.clone().detach().cpu().numpy()[0])
+            print(colored(F"Output[0][:4]-------------------------", 'yellow'))
+            print(model.Output.weight.data.clone().detach().cpu().numpy()[0][:4])
+            print(model.Output.bias.data.clone().detach().cpu().numpy()[0])
+
+            # model.printing = True
             # model(torch.tensor([-1, 0], dtype=torch.float32, device=device))
             # model(torch.tensor([0, 0], dtype=torch.float32, device=device))
             # model(torch.tensor([0, -1], dtype=torch.float32, device=device))
-            model.printing = False
+            # model.printing = False
             pass
         model.sdl.step(loss.item())
+        last_lr = model.sdl.get_last_lr()[0]
+        print(F"last lr = {last_lr}")
+        model.gbn0.set_lr(last_lr)  ###################################################################################
+        model.gbn1.set_lr(last_lr)  ###################################################################################
+        model.gbnOut.set_lr(
+            last_lr)  ###################################################################################
         temp = 0
-        # temp = model.sparser.apply(model.Lin0)
-        # print(F"sparsed: {temp} -----------")
-
+        # temp = temp + model.sparser.apply(model.Lin0)
+        # temp = temp + model.sparser.apply(model.Lin1)
+        # temp = temp + model.sparser.apply(model.Lin2)
+        # temp = temp + model.sparser.apply(model.Lin3)
+        if temp > 0:
+            print(colored(F"sparsed: {temp} -----------", 'red'))
+            pass
         print(F"Loss:  {loss.item()}")
         model.eval()
         with torch.no_grad():

@@ -44,7 +44,7 @@ class Gdropout(torch.nn.Module):
 
 
 
-if 1:
+if 0:
     layer1 = Gdropout(p = 0.2)
     ddd = layer1.get_mul_factor()
     in1 = torch.tensor([1,2,3], dtype = torch.float32, requires_grad= True)

@@ -7,6 +7,8 @@
 ##test_var = util.Counter()
 #
 from .Counter import Counter as Counter
+from .Counter import Counter_log as Counter_log
+from .indicator import Linear_indicator as Linear_indicator
 from .utils import Gaussian as Gaussian
 #from .plain_mean import plain_mean as plain_mean
 from . import datagen

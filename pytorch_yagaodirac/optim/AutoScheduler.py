@@ -34,4 +34,7 @@ class AutoScheduler:
         self.loss = loss
         self.sdl.step()
         pass
+    def get_last_lr(self):
+        return self.sdl.get_last_lr()
+        pass
     pass

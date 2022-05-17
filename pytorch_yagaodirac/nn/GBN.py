@@ -31,8 +31,11 @@ from .functional.GBN_functional import GBN_functional as GBN_functional
 #    pass#class
 
 class GBN(torch.nn.Module):
-    def __init__(self, *, scale = 0.01):
-        '''Since BN messes up with the forward propagation, Now we have Gradient Batch Normalization.
+    def __init__(self, scale = 1., *, lr = 1e-2):
+        '''Whenever the learning rate is modified, call the set_lr() function in this object.
+        According to my test, the scale should be at least greater than 1e-4 and less than 1e18. If it's greater than 1e-3, it works fine.
+        Farther test needed.
+        Since BN messes up with the forward propagation, Now we have Gradient Batch Normalization.
         Notice, to replace x = relu(self.Linear_0(BN(x))),
         I recommend x = relu(GBN(self.Linear_0(x))).
         Reason is that, BN makes x in a range which helps the w to learn in a prefered speed.
@@ -42,11 +45,15 @@ class GBN(torch.nn.Module):
         Warning: this gradient adjusting flows backward all the way, it may mess up with the earlier layers.'''
         super(GBN, self).__init__()
         self.scale = scale
+        self.lr = lr
         pass
     def forward(self, x):
-        x = GBN_functional.apply(x, self.scale)
+        x = GBN_functional.apply(x, float(self.scale*self.lr))
         return x
         pass#def forward
+    def set_lr(self, lr):
+        self.lr = lr
+        pass
     pass#class
 
 
