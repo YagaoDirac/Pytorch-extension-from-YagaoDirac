@@ -1,9 +1,39 @@
+
+ordered param，贪婪版本，就是用一阶导数除以二阶导数的那种。然后去笔记本里面测试一下再决定。
+
+indicator的结果要和GBN的scale联系起来。需要一个公式。
+
+
+
+
+最近的新东西，make linear，应该还是有用的。
+
+sparser基本可以确定，在没有用和很难用之间。
+现在就等新的linear了。
+然后做一个新的module容器。
+
+
+
+x:
+h1 = w1(x+1)+b1
+h2 = w2(x-1)+b2
+x = h1+h2
+return x
+Thus, no BN is needed.
+
+
+
+Also, is w is originally 	quadratic . 
+Not wx+b, it's wwx+bb, what would the gradient look like.
+
+
+
 super linear layer.
 
 
 
 5
-[DONE]indicator to show if some param goes to a direction or shake around a point.
+[basically DONE]indicator to show if some param goes to a direction or shake around a point.
 
 
 
@@ -11,13 +41,13 @@ super linear layer.
 1
 g dropout( to be tested) probably doesn't help at all.
 
-2[DONE]
+2[probably DONE]
 make linear WIP (util.py) w should be rand/sqrt(dim_in), or normalize it(length to 1), and bias should be a const for every output.
 
-WIP
 
 
-3
+
+3WIP=================
 bn cont
 resnet cont. Also let it contain the selmul layer.
 

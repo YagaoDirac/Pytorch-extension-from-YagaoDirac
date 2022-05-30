@@ -1,7 +1,7 @@
 from PIL import Image
 import numpy
 import torch
-
+from pytorch_yagaodirac.Counter import Counter as Counter
 #https://stackoverflow.com/questions/67631/how-do-i-import-a-module-given-the-full-path
 #https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
 #import importlib.util
@@ -10,27 +10,7 @@ import torch
 #spec.loader.exec_module(util)
 #test_var = util.Counter()
 
-
 device = torch.device('cuda')
-
-
-#I copied the Counter class from out side. The jupyterLab doesn't run the import code above.
-class Counter:
-    def __init__(self, start_from = 5, every = -1):
-        self.next = start_from
-        self.every = every
-        if every<=0:
-            self.every = start_from
-            pass
-        pass
-    def get(self, current):
-        if current>= self.next:
-            self.next += self.every
-            return True
-            pass
-        return False
-        pass
-    pass
 
 
 
@@ -144,7 +124,7 @@ class nerf2d_datagen_no_pe(torch.nn.Module):
 
 
 if 0:
-    data_gen = nerf2d_datagen_no_pe('dataset/', 'test.png')
+    data_gen = nerf2d_datagen_no_pe('dataset/', 'compound dot.png')
     data_gen.cuda()
     data_gen.double()
     X,Y = data_gen.get_data(3)

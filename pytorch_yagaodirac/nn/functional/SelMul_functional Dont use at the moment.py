@@ -39,7 +39,7 @@ class SelMul_functional(torch.nn.Module):
 
 
         # Makes sure the input has a batch_size dimention.
-        if len(list(x.size())) == 1:
+        if len(list(x.volume())) == 1:
             x = x.view(1, -1)
             pass
         # The 2 heads.

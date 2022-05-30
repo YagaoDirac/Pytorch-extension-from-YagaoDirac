@@ -1,25 +1,25 @@
 import torch
 
-#from .functional.Gdropout_functional import Gdropout_functional as Gdropout_functional
+from pytorch_yagaodirac.nn.functional.Gdropout_functional import Gdropout_functional as Gdropout_functional
 
-class Gdropout_functional(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, x, p):
-        p_as_tensor = torch.tensor([p],dtype = torch.float32)
-        ctx.save_for_backward(p_as_tensor)
-        return x
-        pass
-    @staticmethod
-    def backward(ctx, g):
-        p_as_tensor, = ctx.saved_tensors
-        p = p_as_tensor.item()
-        mul_factor = 1/(1-p)
-
-        flag = torch.rand_like(g)>p
-        flag = flag * mul_factor
-        g = g*flag
-        return g, None
-    pass#class
+#class Gdropout_functional(torch.autograd.Function):
+#    @staticmethod
+#    def forward(ctx, x, p):
+#        p_as_tensor = torch.tensor([p],dtype = torch.float32)
+#        ctx.save_for_backward(p_as_tensor)
+#        return x
+#        pass
+#    @staticmethod
+#    def backward(ctx, g):
+#        p_as_tensor, = ctx.saved_tensors
+#        p = p_as_tensor.item()
+#        mul_factor = 1/(1-p)
+#
+#        flag = torch.rand_like(g)>p
+#        flag = flag * mul_factor
+#        g = g*flag
+#        return g, None
+#    pass#class
 
 
 

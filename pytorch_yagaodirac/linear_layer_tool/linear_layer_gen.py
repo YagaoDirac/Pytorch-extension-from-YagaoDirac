@@ -128,7 +128,7 @@ class linear_layer_gen:
         pass#def
     pass#class
 
-if 1:
+if 0:
     s_gen = parameter_gen(True, 10)
     u_gen = parameter_gen(False, 10)
 

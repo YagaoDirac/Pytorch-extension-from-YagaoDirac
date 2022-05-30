@@ -123,8 +123,19 @@ if 0:
 
 
 
+#class greedy_order3_param(torch.nn.Module):
+#    def __init__(self, real_val:torch.Tensor):
 
 
+class GreedyLinear(torch.nn.Module):
+    def __init__(self):
+        super(GreedyLinear, self).__init__()
+        w = 1
+        b = 0.1
+        w_like = math.pow(w, 1 / self.order)
+        b_like = math.pow(b, 1 / self.order)
+        self.w_like = torch.nn.Parameter(torch.full((1,), w_like, dtype=torch.float32))
+        self.b_like = torch.nn.Parameter(torch.full((1,), b_like, dtype=torch.float32))
 
 
 

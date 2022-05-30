@@ -29,5 +29,5 @@ class PLC(torch.nn.Module):
         pass
     def __str__(self):
         a = self.sqrt_of_a*self.sqrt_of_a
-        return F'Parabola double leady relu. sqrt of a: {self.sqrt_of_a}  a: {a}  c: {self.c}  the boundary: {torch.abs(torch.sqrt(self.c)/self.sqrt_of_a)}'
+        return F'Parabola double leaky relu. sqrt of a: {self.sqrt_of_a}  a: {a}  c: {self.c}  the boundary: {torch.abs(torch.sqrt(self.c)/self.sqrt_of_a)}'
     pass

@@ -1,6 +1,6 @@
 import torch
 
-from .functional.GBN_functional import GBN_functional as GBN_functional
+from pytorch_yagaodirac.nn.functional.GBN_functional import GBN_functional as GBN_functional
 
 #class GBN_functional(torch.autograd.Function):
 #    @staticmethod
@@ -31,13 +31,15 @@ from .functional.GBN_functional import GBN_functional as GBN_functional
 #    pass#class
 
 class GBN(torch.nn.Module):
-    def __init__(self, scale = 1., *, lr = 1e-2):
+    def __init__(self, scale = 1.):#, *, lr = 1e-2):
         '''Whenever the learning rate is modified, call the set_lr() function in this object.
-        According to my test, the scale should be at least greater than 1e-4 and less than 1e18. If it's greater than 1e-3, it works fine.
+        According to my test, the scale should be at least greater than 1e-4 and less than 1e18 for torch.float32.
+        If it's greater than 1e-3, it works fine.
         Farther test needed.
         Since BN messes up with the forward propagation, Now we have Gradient Batch Normalization.
         Notice, to replace x = relu(self.Linear_0(BN(x))),
         I recommend x = relu(GBN(self.Linear_0(x))).
+        Or I also recommend my invention in which I combined a lot useful tools for you. It's pytorch_yagaodirac.nn.Linear
         Reason is that, BN makes x in a range which helps the w to learn in a prefered speed.
         This GBN directly calculated prefered update strength, it helps both w and b to learn in a proper speed.
         Modify the scale value to scale the gradient.
@@ -45,20 +47,42 @@ class GBN(torch.nn.Module):
         Warning: this gradient adjusting flows backward all the way, it may mess up with the earlier layers.'''
         super(GBN, self).__init__()
         self.scale = scale
-        self.lr = lr
+        #self.lr = lr
         pass
     def forward(self, x):
-        x = GBN_functional.apply(x, float(self.scale*self.lr))
+        x = GBN_functional.apply(x, float(self.scale))#*self.lr))
         return x
         pass#def forward
-    def set_lr(self, lr):
-        self.lr = lr
+    def set_scale(self, scale_from_lr):
+        '''set scale keeps the lr.'''
+        self.scale = scale_from_lr
+        pass
+    #def set_lr(self, lr, keep_inner_behavior = False):
+    #    '''set lr can both keep scale or not to keep it.'''
+    #    if keep_inner_behavior:
+    #        real_scale = self.scale * self.lr
+    #        self.lr = lr
+    #        self.scale = real_scale / self.lr
+    #        pass
+    #    else:
+    #        self.lr = lr
+    #        pass
+    #    pass
+    def get_working_scale(self):
+        return self.scale#*self.lr
         pass
     pass#class
 
 
 
 if 0:
+    layer0 = GBN(3,lr = 0.7)
+    layer0.set_scale(33)
+    layer0.set_scale(3)
+    layer0.set_lr(7.7)
+    layer0.set_lr(77, True)
+
+
     layer1 = GBN(scale= 10)
     in1 = torch.tensor([1,2,3], dtype = torch.float32, requires_grad= True)
     in1_2 = torch.tensor([1,2,3], dtype = torch.float32)
