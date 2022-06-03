@@ -9,7 +9,7 @@
 from .Counter import Counter, Counter_log
 from .Dragger import Dragger, Dragger_simple
 from pytorch_yagaodirac.linear_layer_tool.indicator import Linear_indicator
-from .nn.functional.Gaussian_functional import Gaussian
+from pytorch_yagaodirac.nn.functional.Gaussian_functional import Gaussian
 #from .plain_mean import plain_mean as plain_mean
 from . import datagen
 from . import nn
